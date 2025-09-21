@@ -1,0 +1,17 @@
+Resources:
+  SSHBruteForceEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: SSHBruteForceDetection
+      Description: Trigger Lambda on SSH brute force GuardDuty finding
+      EventPattern:
+        source:
+          - aws.guardduty
+        detail-type:
+          - GuardDuty Finding
+        detail:
+          type:
+            - UnauthorizedAccess:EC2/SSHBruteForce
+      Targets:
+        - Arn: arn:aws:lambda:<ACCOUNT_REGION>:<AWS_ACCOUNT_ID>:function:SSHBruteForceResponder
+          Id: SSHBruteForceResponderTarget

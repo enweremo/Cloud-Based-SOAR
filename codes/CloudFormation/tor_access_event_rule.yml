@@ -1,0 +1,17 @@
+Resources:
+  TorAccessEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: TorTrafficDetection
+      Description: Trigger Lambda on Tor-based EC2 traffic
+      EventPattern:
+        source:
+          - aws.guardduty
+        detail-type:
+          - GuardDuty Finding
+        detail:
+          type:
+            - UnauthorizedAccess:EC2/TorClientTraffic
+      Targets:
+        - Arn: arn:aws:lambda:<ACCOUNT_REGION>:<AWS_ACCOUNT_ID>:function:TorAccessResponder
+          Id: TorAccessResponderTarget

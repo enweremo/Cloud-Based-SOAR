@@ -1,0 +1,31 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "CreateNACLRule",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateNetworkAclEntry"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "WriteToDynamoDB",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:PutItem",
+        "dynamodb:Scan"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:<ACCOUNT_REGION>:<AWS_ACCOUNT_ID>:table/RemediationLog",
+        "arn:aws:dynamodb:<ACCOUNT_REGION>:<AWS_ACCOUNT_ID>:table/NACLBlockList"
+      ]
+    },
+    {
+      "Sid": "SendSNSAlert",
+      "Effect": "Allow",
+      "Action": "sns:Publish",
+      "Resource": "arn:aws:sns:<ACCOUNT_REGION>:<AWS_ACCOUNT_ID>:SecurityAlertTopic"
+    }
+  ]
+}

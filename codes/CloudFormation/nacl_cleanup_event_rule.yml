@@ -1,0 +1,10 @@
+Resources:
+  NACLRuleAgingCleanupRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: NACLCleanupSchedule
+      ScheduleExpression: rate(1 day)
+      State: ENABLED
+      Targets:
+        - Arn: arn:aws:lambda:<ACCOUNT_REGION>:<AWS_ACCOUNT_ID>:function:NACLCleanup
+          Id: NACLCleanupTarget

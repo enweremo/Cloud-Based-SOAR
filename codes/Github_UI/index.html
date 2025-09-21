@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SOAR Threat Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>SOAR Threat Dashboard</h1>
+    <div class="controls">
+      <select id="dateRange">
+        <option value="1">Last 1 Day</option>
+        <option value="7" selected>Last 7 Days</option>
+        <option value="30">Last 30 Days</option>
+      </select>
+      <label><input type="checkbox" id="autoRefresh" /> Auto-Refresh</label>
+      <button class="download-btn" onclick="downloadCSV('remediations')">Download Remediation Data</button>
+      <button class="download-btn" onclick="downloadCSV('blocked_ips')">Download NACL Blocklist</button>
+    </div>
+
+    <div class="tabs">
+      <button id="btn-incident" class="tab-btn active" onclick="switchTab('incident')">Incident & Automation</button>
+      <button id="btn-performance" class="tab-btn" onclick="switchTab('performance')">Threats & Performance</button>
+      <button id="btn-health" class="tab-btn" onclick="switchTab('health')">System Health</button>
+    </div>
+
+    <div class="charts">
+      <div class="chart-item"><canvas id="chart1"></canvas></div>
+      <div class="chart-item"><canvas id="chart2"></canvas></div>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>

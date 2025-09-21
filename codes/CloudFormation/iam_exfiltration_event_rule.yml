@@ -1,0 +1,17 @@
+Resources:
+  IAMAccessKeyExfilEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: IAMKeyExfiltrationDetection
+      Description: Trigger Lambda on IAM access key exfiltration finding
+      EventPattern:
+        source:
+          - aws.guardduty
+        detail-type:
+          - GuardDuty Finding
+        detail:
+          type:
+            - CredentialAccess:AWS/IAMUser/AccessKeyExfiltration
+      Targets:
+        - Arn: arn:aws:lambda:<ACCOUNT_REGION>:<AWS_ACCOUNT_ID>:function:IAMExfiltrationResponder
+          Id: IAMExfiltrationResponderTarget

@@ -1,0 +1,17 @@
+Resources:
+  IAMAnomalyEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: IAMAnomalyDetection
+      Description: Trigger Lambda on anomalous IAM behavior finding
+      EventPattern:
+        source:
+          - aws.guardduty
+        detail-type:
+          - GuardDuty Finding
+        detail:
+          type:
+            - Persistence:AWS/IAMUser/AnomalousBehavior
+      Targets:
+        - Arn: arn:aws:lambda:<ACCOUNT_REGION>:<AWS_ACCOUNT_ID>:function:IAMAnomalyResponder
+          Id: IAMAnomalyResponderTarget

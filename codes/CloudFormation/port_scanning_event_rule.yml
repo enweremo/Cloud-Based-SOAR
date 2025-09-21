@@ -1,0 +1,17 @@
+Resources:
+  PortScanningEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: PortScanningDetection
+      Description: Trigger Lambda on GuardDuty port scanning finding
+      EventPattern:
+        source:
+          - aws.guardduty
+        detail-type:
+          - GuardDuty Finding
+        detail:
+          type:
+            - Recon:EC2/PortProbeUnprotectedPort
+      Targets:
+        - Arn: arn:aws:lambda:<ACCOUNT_REGION>:<AWS_ACCOUNT_ID>:function:PortScanningResponder
+          Id: PortScanningResponderTarget

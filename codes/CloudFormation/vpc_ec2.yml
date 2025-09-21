@@ -1,0 +1,305 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy EC2 in a NEW VPC with refined web login and login_monitor.py
+
+Resources:
+
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: soar-demo-vpc
+
+  MyInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: soar-demo-igw
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref MyVPC
+      InternetGatewayId: !Ref MyInternetGateway
+
+  MyPublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [0, !GetAZs '']
+
+  MyRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyVPC
+
+  DefaultRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref MyRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref MyInternetGateway
+
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref MyPublicSubnet
+      RouteTableId: !Ref MyRouteTable
+
+  MySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP and SSH
+      VpcId: !Ref MyVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: soar-web-sg
+
+  WebServerSecondaryInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      KeyName: soar-web-key  # Replace with your actual key
+      ImageId: ami-0c02fb55956c7d316  # Amazon Linux 2
+      SubnetId: !Ref MyPublicSubnet
+      SecurityGroupIds:
+        - !Ref MySecurityGroup
+      Tags:
+        - Key: Name
+          Value: soar-secondary-web
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y httpd php python3
+          systemctl enable httpd
+          systemctl start httpd
+
+          # Create SSH demo user
+          useradd demo
+          echo 'demo:Passw0rd' | chpasswd
+
+          # login.html
+          cat <<EOF > /var/www/html/login.html
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <title>Secure Login</title>
+            <style>
+              body {
+                background: linear-gradient(to right, #4e54c8, #8f94fb);
+                font-family: 'Segoe UI', sans-serif;
+                color: #fff;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+              }
+              .login-box {
+                background: rgba(0, 0, 0, 0.4);
+                padding: 30px;
+                border-radius: 12px;
+                box-shadow: 0 0 10px #000;
+                width: 300px;
+              }
+              input[type="text"], input[type="password"], input[type="submit"] {
+                width: 100%;
+                padding: 10px;
+                margin: 8px 0;
+                border: none;
+                border-radius: 6px;
+              }
+              input[type="submit"] {
+                background-color: #00c6ff;
+                color: white;
+                cursor: pointer;
+              }
+              input[type="submit"]:hover {
+                background-color: #0072ff;
+              }
+            </style>
+          </head>
+          <body>
+            <form class="login-box" action="login.php" method="POST">
+              <h2>Login</h2>
+              <input type="text" name="username" placeholder="Username" required>
+              <input type="password" name="password" placeholder="Password" required>
+              <input type="submit" value="Sign In">
+            </form>
+          </body>
+          </html>
+          EOF
+
+          # login.php
+          cat <<EOF > /var/www/html/login.php
+          <?php
+          \$valid_users = ["admin" => "<TEST_ADMIN_PASSWORD>", "user1" => "<TEST_USER1_PASSWORD>"];
+          \$username = \$_POST["username"];
+          \$password = \$_POST["password"];
+          \$ip = \$_SERVER['REMOTE_ADDR'];
+          \$log = "[" . date("Y-m-d H:i:s") . "] Username=\$username, Password=\$password, IP=\$ip\\n";
+          file_put_contents("/var/www/html/login_attempts.log", \$log, FILE_APPEND);
+          if (isset(\$valid_users[\$username]) && \$valid_users[\$username] === \$password) {
+              header("Location: dashboard.html");
+              exit();
+          } else {
+              echo "<script>alert('Invalid Credential'); window.location.href='login.html';</script>";
+          }
+          ?>
+          EOF
+
+          # Create log file and set permissions
+          touch /var/www/html/login_attempts.log
+          chmod 666 /var/www/html/login_attempts.log
+
+          # dashboard.html
+          cat <<EOF > /var/www/html/dashboard.html
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <title>Welcome</title>
+            <style>
+              body {
+                background: linear-gradient(to right, #00b09b, #96c93d);
+                color: white;
+                font-family: 'Segoe UI', sans-serif;
+                text-align: center;
+                padding-top: 100px;
+              }
+              .container {
+                background-color: rgba(0, 0, 0, 0.3);
+                display: inline-block;
+                padding: 30px;
+                border-radius: 12px;
+              }
+              h1 {
+                font-size: 36px;
+              }
+              p {
+                font-size: 18px;
+              }
+              .logout {
+                margin-top: 30px;
+              }
+              .logout a {
+                background-color: #ff4b5c;
+                color: white;
+                padding: 10px 20px;
+                text-decoration: none;
+                border-radius: 8px;
+              }
+              .logout a:hover {
+                background-color: #d9002b;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>Welcome, Demo User!</h1>
+              <p>You have successfully logged in to the SOAR demo environment.</p>
+              <div class="logout">
+                <a href="login.html">Logout</a>
+              </div>
+            </div>
+          </body>
+          </html>
+          EOF
+
+          # login_monitor.py
+          cat << 'EOF' > /home/ec2-user/login_monitor.py
+          import json, time, boto3, re
+          from datetime import datetime
+
+          LOG_FILE = "/var/www/html/login_attempts.log"
+          FAIL_THRESHOLD = 5
+          CHECK_INTERVAL = 2
+          REGION = "<ACCOUNT_REGION>"
+          VALID_USERS = {"admin": "<TEST_ADMIN_PASSWORD>", "user1": "<TEST_USER1_PASSWORD>"}
+
+          eventbridge = boto3.client("events", region_name=REGION)
+          failed_attempts = {}
+          log_pattern = re.compile(r"\[.*?\]\s+Username=(?P<user>.+?),\s+Password=(?P<pw>.+?), IP=(?P<ip>[\d\.]+)")
+
+          def follow(file):
+              file.seek(0, 2)
+              while True:
+                  line = file.readline()
+                  if not line:
+                      time.sleep(CHECK_INTERVAL)
+                      continue
+                  yield line
+
+          def emit_event(ip, user):
+              eventbridge.put_events(Entries=[{
+                  "Source": "custom.web.loginmonitor",
+                  "DetailType": "GuardDuty Finding",
+                  "Detail": json.dumps({
+                      "type": "custom.web.logs",
+                      "suspicious_ip": ip,
+                      "username": user,
+                      "fail_count": FAIL_THRESHOLD,
+                      "reason": "5 consecutive failed login attempts from the same IP"
+                  }),
+                  "EventBusName": "default"
+              }])
+              print(f"[ALERT] Event emitted for IP {ip} after {FAIL_THRESHOLD} failures.")
+
+          def monitor_log():
+              print(f"[*] Monitoring {LOG_FILE} for failed login attempts...")
+              with open(LOG_FILE, "r") as logfile:
+                  for line in follow(logfile):
+                      match = log_pattern.search(line)
+                      if match:
+                          ip = match.group("ip")
+                          user = match.group("user").strip()
+                          pw = match.group("pw").strip()
+                          if user not in VALID_USERS or VALID_USERS[user] != pw:
+                              failed_attempts.setdefault(ip, []).append(datetime.utcnow())
+                              if len(failed_attempts[ip]) >= FAIL_THRESHOLD:
+                                  emit_event(ip, user)
+                                  failed_attempts[ip] = []
+                          else:
+                              failed_attempts[ip] = []
+
+          if __name__ == "__main__":
+              monitor_log()
+          EOF
+
+          chmod +x /home/ec2-user/login_monitor.py
+
+          # systemd service
+          cat << EOF > /etc/systemd/system/loginmonitor.service
+          [Unit]
+          Description=Login Monitor for Web Abuse Detection
+          After=network.target
+
+          [Service]
+          ExecStart=/usr/bin/python3 /home/ec2-user/login_monitor.py
+          Restart=always
+          User=ec2-user
+
+          [Install]
+          WantedBy=multi-user.target
+          EOF
+
+          systemctl daemon-reexec
+          systemctl daemon-reload
+          systemctl enable loginmonitor
+          systemctl start loginmonitor

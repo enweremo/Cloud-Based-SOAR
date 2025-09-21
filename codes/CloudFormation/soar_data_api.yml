@@ -1,0 +1,114 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: SOAR Data API with Lambda + API Gateway and IAM Role
+
+Resources:
+
+  # IAM Role for Lambda
+  SOARLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: soar-data-api-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ReadThreatTables
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Scan
+                Resource:
+                  - arn:aws:dynamodb:<ACCOUNT_REGION>:<AWS_ACCOUNT_ID>:table/ThreatMetadata
+                  - arn:aws:dynamodb:<ACCOUNT_REGION>:<AWS_ACCOUNT_ID>:table/RemediationLog
+                  - arn:aws:dynamodb:<ACCOUNT_REGION>:<AWS_ACCOUNT_ID>:table/NACLBlockList
+
+  # Lambda Function
+  SOARDataFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: SOARDataAPI
+      Runtime: python3.11
+      Handler: soar_data_api.lambda_handler
+      Role: !GetAtt SOARLambdaRole.Arn
+      Code:
+        S3Bucket: <S3_BUCKET_NAME>
+        S3Key: api/soar_data_api.zip
+      Timeout: 10
+
+  # API Gateway REST API
+  SOARDataApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: SOARDataApi
+      EndpointConfiguration:
+        Types: [REGIONAL]
+
+  # /data resource
+  DataResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt SOARDataApi.RootResourceId
+      PathPart: data
+      RestApiId: !Ref SOARDataApi
+
+  # GET /data method
+  GETMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref SOARDataApi
+      ResourceId: !Ref DataResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub
+          - arn:aws:apigateway:${Region}:lambda:path/2015-03-31/functions/${FuncArn}/invocations
+          - Region: !Ref AWS::Region
+            FuncArn: !GetAtt SOARDataFunction.Arn
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+
+  # OPTIONS /data for CORS
+  CORSOptions:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref SOARDataApi
+      ResourceId: !Ref DataResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: '{\"statusCode\": 200}'
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ''
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  # Lambda Permission for API Gateway
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref SOARDataFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*/GET/data

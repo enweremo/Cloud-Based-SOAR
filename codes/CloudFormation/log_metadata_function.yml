@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Lambda to log GuardDuty metadata to DynamoDB and archive to S3
+
+Resources:
+
+  LogMetadataFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: LogMetadataFunctionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LogMetadataPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                Resource: arn:aws:dynamodb:*:*:table/ThreatMetadata
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource: arn:aws:s3:::<S3_BUCKET_NAME>/archived-findings/*
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+
+  LogMetadataFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: logMetadataFunction
+      Runtime: python3.11
+      Handler: logMetadataFunction.lambda_handler
+      Role: !GetAtt LogMetadataFunctionRole.Arn
+      Code:
+        S3Bucket: <S3_BUCKET_NAME>
+        S3Key: log_metadata_function.zip
+      Timeout: 30
+      MemorySize: 128
+      Environment:
+        Variables:
+          TABLE_NAME: ThreatMetadata
+          S3_BUCKET: <S3_BUCKET_NAME>
+
+  LogMetadataEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: LogGuardDutyMetadata
+      Description: Trigger metadata logger for all GuardDuty findings
+      EventPattern:
+        source:
+          - aws.guardduty
+        detail-type:
+          - GuardDuty Finding
+      Targets:
+        - Arn: !GetAtt LogMetadataFunction.Arn
+          Id: LogMetadataFunctionTarget
+
+  PermissionForEventsToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LogMetadataFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt LogMetadataEventRule.Arn

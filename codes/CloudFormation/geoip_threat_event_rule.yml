@@ -1,0 +1,14 @@
+Resources:
+  GeoIPThreatDetectionRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: GeoIPThreatDetection
+      Description: Detect threats from high-risk IP regions
+      EventPattern:
+        source:
+          - aws.guardduty
+        detail-type:
+          - GuardDuty Finding
+      Targets:
+        - Arn: arn:aws:lambda:<ACCOUNT_REGION>:<AWS_ACCOUNT_ID>:function:GeoIPThreatResponder
+          Id: GeoIPThreatResponderTarget

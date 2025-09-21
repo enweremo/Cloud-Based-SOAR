@@ -1,0 +1,151 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Master CloudFormation Template for SOAR Containment Lambdas
+
+Parameters:
+  LambdaRoleArn:
+    Type: String
+    Description: IAM Role ARN for Lambda functions (e.g., LabRole)
+
+Resources:
+
+  ## Shared DynamoDB Tables
+  RemediationLogTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: RemediationLog
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  NACLBlockListTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: NACLBlockList
+      AttributeDefinitions:
+        - AttributeName: ip_address
+          AttributeType: S
+      KeySchema:
+        - AttributeName: ip_address
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  ##############################
+  ## Containment Lambda Functions
+  ##############################
+
+  SSHBruteForceLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: SSHBruteForceResponder
+      Runtime: python3.11
+      Handler: ssh_brute_force_lambda.lambda_handler
+      Role: !Ref LambdaRoleArn
+      Code:
+        S3Bucket: <S3_BUCKET_NAME>
+        S3Key: containments/ssh_brute_force/ssh_brute_force.zip
+      Timeout: 30
+
+  PortScanningLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: PortScanningResponder
+      Runtime: python3.11
+      Handler: port_scanning_lambda.lambda_handler
+      Role: !Ref LambdaRoleArn
+      Code:
+        S3Bucket: <S3_BUCKET_NAME>
+        S3Key: containments/port_scanning/port_scanning.zip
+      Timeout: 30
+
+  IAMExfiltrationLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: IAMExfiltrationResponder
+      Runtime: python3.11
+      Handler: iam_exfiltration_lambda.lambda_handler
+      Role: !Ref LambdaRoleArn
+      Code:
+        S3Bucket: <S3_BUCKET_NAME>
+        S3Key: containments/iam_exfiltration/iam_exfiltration.zip
+      Timeout: 30
+
+  IAMAnomalyLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: IAMAnomalyResponder
+      Runtime: python3.11
+      Handler: iam_anomaly_lambda.lambda_handler
+      Role: !Ref LambdaRoleArn
+      Code:
+        S3Bucket: <S3_BUCKET_NAME>
+        S3Key: containments/iam_anomaly/iam_anomaly.zip
+      Timeout: 30
+
+  TorAccessLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: TorAccessResponder
+      Runtime: python3.11
+      Handler: tor_access_lambda.lambda_handler
+      Role: !Ref LambdaRoleArn
+      Code:
+        S3Bucket: <S3_BUCKET_NAME>
+        S3Key: containments/tor_access/tor_access.zip
+      Timeout: 30
+
+  WebLoginAbuseLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: WebLoginAbuseResponder
+      Runtime: python3.11
+      Handler: web_login_abuse_lambda.lambda_handler
+      Role: !Ref LambdaRoleArn
+      Code:
+        S3Bucket: <S3_BUCKET_NAME>
+        S3Key: containments/web_login_abuse/web_login_abuse.zip
+      Timeout: 30
+
+  S3UnauthorizedAccessLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: S3UnauthorizedAccessResponder
+      Runtime: python3.11
+      Handler: s3_unauthorized_access_lambda.lambda_handler
+      Role: !Ref LambdaRoleArn
+      Code:
+        S3Bucket: <S3_BUCKET_NAME>
+        S3Key: containments/s3_unauthorized_access/s3_unauthorized_access.zip
+      Timeout: 30
+
+  GeoIPThreatLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: GeoIPThreatResponder
+      Runtime: python3.11
+      Handler: geoip_threat_lambda.lambda_handler
+      Role: !Ref LambdaRoleArn
+      Code:
+        S3Bucket: <S3_BUCKET_NAME>
+        S3Key: containments/geoip_threat/geoip_threat.zip
+      Timeout: 30
+
+  NACLCleanupLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: NACLCleanup
+      Runtime: python3.11
+      Handler: nacl_cleanup_lambda.lambda_handler
+      Role: !Ref LambdaRoleArn
+      Code:
+        S3Bucket: <S3_BUCKET_NAME>
+        S3Key: containments/nacl_cleanup/nacl_cleanup.zip
+      Timeout: 30
+
+Outputs:
+  DeploymentSummary:
+    Description: Deployed all SOAR containment functions
+    Value: "8 containment Lambdas + cleanup Lambda deployed successfully."

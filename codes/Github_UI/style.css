@@ -1,0 +1,189 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(120deg, #b3e6fb 0%, #afe6fa 100%);
+  color: #003333;
+}
+
+.container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 10px 5px 10px 5px;
+  text-align: center;
+}
+
+h1 {
+  font-size: 2.3rem;
+  margin-bottom: 10px;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 13px;
+}
+
+.controls select,
+.controls button,
+.controls label {
+  padding: 5px 8px;
+  font-size: 13px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  margin: 0;
+  flex: 0 0 auto;
+  min-width: unset;
+  width: auto;
+}
+
+.download-btn {
+  background: #21aae2;
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  border-radius: 7px;
+  padding: 5px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px 0 #a7e1f8;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.download-btn:hover {
+  background: #bfff23;
+  color: #00231a;
+}
+
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  background: #e0f7fa;
+  border: none;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: bold;
+  border-radius: 18px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  color: #00231a;
+  margin-bottom: 0;
+  width: auto;
+}
+
+.tab-btn.active {
+  background-color: #189e9a;
+  color: #fff;
+}
+
+.tab-btn:not(.active):hover {
+  background: #bfff23;
+  color: #00231a;
+}
+
+/* Chart container - flex for desktop */
+.charts {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 24px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.chart-item {
+  flex: 1 1 48%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 240px;
+  max-width: 520px;
+  background: #fff;
+  border: 2.5px solid #21aae2;
+  border-radius: 11px;
+  padding: 10px 8px 10px 8px;
+  box-sizing: border-box;
+  margin-bottom: 0;
+}
+
+/* Chart canvas styling */
+canvas {
+  width: 100% !important;
+  height: 350px !important;
+  min-height: 220px !important;
+  background-color: white;
+  border-radius: 10px;
+}
+
+/* ----- Mobile Optimization (≤650px): stack charts vertically ----- */
+@media (max-width: 650px) {
+  h1 {
+    font-size: 1.3rem;
+  }
+  .controls {
+    flex-wrap: wrap;
+    flex-direction: row;
+    gap: 4px;
+    margin-bottom: 7px;
+    justify-content: center;
+  }
+  .controls select,
+  .controls label,
+  .download-btn {
+    width: auto !important;
+    min-width: 70px !important;
+    font-size: 12px;
+    padding: 5px 5px;
+    margin: 0 1px 2px 1px;
+    flex: 0 0 auto !important;
+  }
+  .controls label {
+    min-width: 90px !important;
+    margin-right: 0;
+    margin-left: 0;
+  }
+  .tabs {
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 7px;
+  }
+  .tab-btn {
+    width: 100%;
+    font-size: 12px;
+    padding: 7px 0;
+    margin: 0;
+    border-radius: 10px;
+  }
+  .charts {
+    flex-direction: column;
+    gap: 10px;
+    width: 100vw;
+    margin: 0;
+    align-items: center;
+  }
+  .chart-item {
+    width: 98vw !important;
+    min-width: unset !important;
+    max-width: 98vw !important;
+    padding: 4px 2px 4px 2px;
+    margin-bottom: 4px;
+  }
+  canvas {
+    width: 96vw !important;
+    min-width: unset !important;
+    max-width: 96vw !important;
+    height: 210px !important; 
+    min-height: 160px !important;
+    margin: 0 auto;
+    display: block;
+  }
+}

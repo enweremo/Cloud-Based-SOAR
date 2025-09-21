@@ -1,0 +1,17 @@
+Resources:
+  S3UnauthorizedAccessRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: S3AnonAccessDetection
+      Description: Trigger Lambda on public S3 access
+      EventPattern:
+        source:
+          - aws.guardduty
+        detail-type:
+          - GuardDuty Finding
+        detail:
+          type:
+            - UnauthorizedAccess:S3/AnonymousUser
+      Targets:
+        - Arn: arn:aws:lambda:<ACCOUNT_REGION>:<AWS_ACCOUNT_ID>:function:S3UnauthorizedAccessResponder
+          Id: S3UnauthorizedAccessResponderTarget
