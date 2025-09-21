@@ -39,3 +39,12 @@ Use **placeholders** in code and documentation. Store real secrets securely in:
 
 ## Responsible Disclosure  
 Please allow reasonable time for investigation and remediation before any public disclosure.  
+
+## Demo Authentication Disclaimer
+
+For demonstration purposes, this project includes a very simple static login form (HTML/PHP) hosted on an EC2 instance.  
+- This is **not** intended as a production authentication system.  
+- The purpose is to **simulate login attempts** (both valid and invalid) so that failures can be captured and forwarded into the SOAR workflow.  
+- By intentionally keeping the login logic minimal, it provides a controlled test surface for GuardDuty, EventBridge, and the SOAR playbooks to respond to.  
+
+**Important:** This is not a security error or misconfiguration. It is a deliberate simplification to allow repeatable demonstrations of incident detection and automated response.
