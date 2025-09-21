@@ -1,8 +1,7 @@
 <?php
 $valid_users = [
-  "admin" => "pass123",
-  "user1" => "demo123"
-];
+  "<USERNAME>" => "<PASSWORD>",
+ ];
 
 $username = $_POST["username"];
 $password = $_POST["password"];
