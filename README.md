@@ -1,7 +1,7 @@
 # Cloud-Based Serverless Security Orchestration, Automation, and Response (SOAR) System on AWS  
 
 ## Project Overview  
-This project demonstrates the design and implementation of a **cloud-native, serverless SOAR system** on AWS. It was developed as a **capstone project for PROJ 603 at Saskatchewan Polytechnic** to provide small and medium-sized organizations with a **cost-effective incident response framework**.  
+This project demonstrates the design and implementation of a **cloud-native, serverless SOAR system** on AWS. It was developed as a **capstone project for Cybersecurity potsgraduate certificate program at Saskatchewan Polytechnic** to provide small and medium-sized organizations with a **cost-effective incident response framework**.  
 
 The solution leverages **AWS GuardDuty for continuous threat detection, EventBridge for orchestration, Lambda for remediation, DynamoDB and S3 for structured logging, and SNS for real-time alerts**. A GitHub-hosted dashboard integrates with API Gateway to provide **real-time visibility into threats, remediation outcomes, and performance metrics**.  
 
