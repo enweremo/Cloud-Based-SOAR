@@ -160,7 +160,7 @@ The full procedure is documented in the **SOAR Step-by-Step Deployment Guide** (
 
 ---
 
-## ⚠️ Notes  
+## Notes  
 - Replace all AWS account IDs, ARNs, and credentials with placeholders before publishing.  
 - Use only **safe demonstration targets** such as `http://testphp.vulnweb.com`.  
 - Ensure IAM policies follow **least privilege**.  
